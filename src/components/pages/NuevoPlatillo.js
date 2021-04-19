@@ -1,9 +1,53 @@
-import React from 'react';
+import React,{useContext,useState} from 'react';
 import {useFormik} from 'formik'
 import * as Yup from 'yup';
+import {useNavigate} from 'react-router-dom';
+
+import {FirebaseContext} from '../../firebase';
+import FileUploader from 'react-firebase-file-uploader';
 
 const NuevoPlatillo = () => {
 
+
+    //state imagenes
+    const [subiendo,guardarSubiendo] = useState(false);
+    const [progreso,guardarProgreso] = useState(0);
+    const [urlImg,guardarUrlImagen] = useState('');
+
+    //context con las operaciones de firebase
+    const {firebase} = useContext(FirebaseContext); 
+
+    //hook para redirreccionar 
+    const naviga = useNavigate();
+   
+    //codigo upload imagenes firebase
+    const handleUploadStart = ()=>{
+        guardarProgreso(0);
+        guardarSubiendo(true) ;
+    }
+
+    const handleUploadError = error =>{
+        guardarSubiendo=false;
+        console.log(error);
+    }
+
+
+    const handleUploadSuccess = async nombre =>{
+          guardarProgreso(100);
+          guardarSubiendo(false);
+          //almacenar la url de destino 
+          const url = await firebase.storage.ref("productos").child(nombre).getDownloadURL();
+          console.log(url);
+          guardarUrlImagen(url);
+    }
+
+ 
+    const handleProgress = progreso =>{
+        guardarProgreso(progreso);
+        console.log(progreso);
+    }
+
+    
 
     //validacion y leer los datos del formulario
     const formik = useFormik({
@@ -21,8 +65,18 @@ const NuevoPlatillo = () => {
             descripcion: Yup.string().min(3,'La descripcion debe tener minino 3 caracteres').required('La Descripcion es obligatorio'),
 
         }),
-        onSubmit: datos=>{
-            console.log(datos);
+        onSubmit: platillo =>{
+            try {
+                platillo.exitencia =true;
+                platillo.imagen = urlImg;
+                firebase.db.collection('productos').add(platillo);
+                //redireccionar
+                naviga('/menu');
+                
+            } catch (error) {
+                console.log(error);
+            }
+          
         }
     })
 
@@ -103,16 +157,32 @@ const NuevoPlatillo = () => {
 
                             <div className="mb-4">
                                 <label htmlFor="imagen" className="uppercase text-purple-600 font-bold ">Imagen </label>
-                                <input
-                                    className="shadow appearence-none mt-2 hover:bg-purple-200  rouded w-full py-2 px-3 text-purple-600 focus:outline-none focus:shadow-outline"
+                                <FileUploader
+                                    accept="image/*"
                                     id="imagen"
-                                    type="file"
-                                    value={formik.values.imagen}
-                                    onChange={formik.handleChange}
-                                    onBlur={formik.handleBlur}
+                                    name="imagen"
+                                    randomizeFilename
+                                    storageRef={firebase.storage.ref("productos")}
+                                    onUploadStart={handleUploadStart}
+                                    onUploadError={handleUploadError}
+                                    onUploadSuccess={handleUploadSuccess}
+                                    onProgress={handleProgress}
                                 />
                             </div>
-                          
+                            {subiendo && (
+                                <div className="h-12 relative w-full border">
+                                    <div className="bg-green-400 absolute left-0 top-0 text-white px-2 text-sm h-12 flex  items-center " style={{ width:`${progreso}%`}} >
+                                    {progreso} % 
+                                    </div>
+                                </div>)
+                            }
+
+                            {urlImg && (
+                                <p className="bg-green-600  text-white p-3 rounded-md text-center my-5">
+                                    La imagen se subio correctamente
+                                </p>
+                            )}
+
                             <div className="mb-4">
                                 <label htmlFor="descripcion" className="uppercase text-purple-600 font-bold ">descripcion :</label>
                                 <textarea
