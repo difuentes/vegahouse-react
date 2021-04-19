@@ -67,7 +67,7 @@ const NuevoPlatillo = () => {
         }),
         onSubmit: platillo =>{
             try {
-                platillo.exitencia =true;
+                platillo.exitencia=true;
                 platillo.imagen = urlImg;
                 firebase.db.collection('productos').add(platillo);
                 //redireccionar
@@ -171,7 +171,7 @@ const NuevoPlatillo = () => {
                             </div>
                             {subiendo && (
                                 <div className="h-12 relative w-full border">
-                                    <div className="bg-green-400 absolute left-0 top-0 text-white px-2 text-sm h-12 flex  items-center " style={{ width:`${progreso}%`}} >
+                                    <div className="bg-green-600 rounded-md absolute left-0 top-0 text-white px-2 text-sm h-12 flex  items-center " style={{ width:`${progreso}%`}} >
                                     {progreso} % 
                                     </div>
                                 </div>)
